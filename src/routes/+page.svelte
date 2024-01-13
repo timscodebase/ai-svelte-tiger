@@ -1,32 +1,34 @@
 <script lang="ts">
 	import { onMount } from 'svelte'
 	import { enhance } from '$app/forms'
+	import { Img, State } from '$lib'
 	import party from 'party-js'
+	import type { DynamicSourceType } from 'party-js/lib/systems/sources.js'
 	import { allFighters, jsFormSubmit, TextBox, Dialog } from '$lib'
 
-	let winnerInput: HTMLTextAreaElement | null = null
+	let winnerInput: HTMLTextAreaElement | null
 
 	onMount(() => {
-		winnerInput = document.querySelector(`textarea[name=${state.winner}]`)
+		winnerInput = document.querySelector(`textarea[name=${$State.winner}]`)
 	})
 
 	async function handleSubmit(event: { currentTarget: EventTarget & HTMLFormElement }) {
-		state.isLoading = true
-		state.text = ''
-		state.winner = ''
+		$State.isLoading = true
+		$State.text = ''
+		$State.winner = 'opponent1'
 
 		const form = event.target as HTMLFormElement
 
 		const response = await jsFormSubmit(form)
 
 		if (!response.ok) {
-			state.isLoading = false
+			$State.isLoading = false
 			alert('The request experienced an issue.')
 			return
 		}
 
 		if (!response.body) {
-			state.isLoading = false
+			$State.isLoading = false
 			return
 		}
 
@@ -39,18 +41,18 @@
 			const { value, done } = await reader.read()
 			const chunkValue = decoder.decode(value)
 
-			state.text += chunkValue
+			$State.text += chunkValue
 
 			isStillStreaming = !done
 		}
 
 		const winnerPattern = /winner:\s+(\w+).*/gi
-		const match = winnerPattern.exec(state.text)
+		const match = winnerPattern.exec($State.text)
 
-		state.winner = match?.length ? match[1].toLowerCase() : ''
+		$State.winner = match?.length ? match[1].toLowerCase() : ''
 
-		if (state.winner) {
-			const winnerInput = document.querySelector(`textarea[name=${state.winner}]`)
+		if ($State.winner) {
+			const winnerInput = document.querySelector(`textarea[name=${$State.winner}]`)
 			if (winnerInput) {
 				party.confetti(winnerInput as DynamicSourceType, {
 					count: 40,
@@ -60,26 +62,12 @@
 			}
 		}
 
-		state.isLoading = false
-	}
-
-	$: imgStore = {
-		showDialog: false,
-		url: '',
-		isLoading: false
-	}
-
-	$: state = {
-		isLoading: false,
-		text: '',
-		winner: '',
-		opponent1: '',
-		opponent2: ''
+		$State.isLoading = false
 	}
 
 	const pickRandomFighters = () => {
-		state.text = ''
-		state.winner = ''
+		$State.text = ''
+		$State.winner = ''
 
 		const fighters = [...allFighters]
 		const index1 = Math.floor(Math.random() * fighters.length)
@@ -87,21 +75,25 @@
 		const index2 = Math.floor(Math.random() * fighters.length)
 		const fighter2 = fighters[index2]
 
-		state.opponent1 = fighter1
-		state.opponent2 = fighter2
+		$State.opponent1 = fighter1
+		$State.opponent2 = fighter2
 	}
 
 	const onSubmitImg = async (event: Event) => {
-		imgStore.showDialog = true
-		imgStore.isLoading = true
+		$Img.showDialog = true
+		$Img.isLoading = true
 
 		const form = event.target as HTMLFormElement
+		const opp1 = form.get('opponent1')
+		const opp2 = form.get('opponent2')
 
-		const response = await jsFormSubmit(form)
-		const results = await response.json()
+		const res = await fetch(
+			`/api/ai-image?eopponent1=${opp1}&opponent2=${opp2}&winner=${$State.winner}`
+		)
+		const results = await res.json()
 
-		imgStore.url = results.url
-		imgStore.isLoading = false
+		$Img.url = results.url
+		$Img.isLoading = false
 	}
 </script>
 
@@ -109,25 +101,31 @@
 	<h1 class="text-4xl">AI of the Tiger 🐯</h1>
 	<p>A silly AI bot that can tell you who would win in a fight between...</p>
 
-	<form method="POST" class="grid gap-4 mt-8" on:submit|preventDefault={handleSubmit} use:enhance>
+	<form
+		method="POST"
+		class="grid gap-4 mt-8"
+		on:submit|preventDefault={handleSubmit}
+		action="?/prompt"
+		use:enhance
+	>
 		<div class="grid gap-4 sm:grid-cols-2">
 			<TextBox
 				label="Opponent 1"
 				name="opponent1"
-				value={state.opponent1}
-				className={state.winner === 'opponent1' ? 'rainbow' : ''}
+				value={$State.opponent1}
+				className={$State.winner === 'opponent1' ? 'rainbow' : ''}
 			/>
 			<TextBox
 				label="Opponent 2"
 				name="opponent2"
-				value={state.opponent2}
-				className={state.winner === 'opponent2' ? 'rainbow' : ''}
+				value={$State.opponent2}
+				className={$State.winner === 'opponent2' ? 'rainbow' : ''}
 			/>
 		</div>
 
 		<div class="flex gap-4">
-			<button formaction="/prompt" aria-disabled={state.isLoading}>
-				{#if state.isLoading}
+			<button type="submit" aria-disabled={$State.isLoading}>
+				{#if $State.isLoading}
 					<iconify-icon class="svg" icon="pixelarticons:loader" />
 				{:else}
 					Tell me
@@ -139,28 +137,28 @@
 		</div>
 	</form>
 
-	{#if state.text}
-		<article class="mt-4 border border-2 rounded-lg p-4 bg-[canvas]">
-			<p>{state.text.slice(26)}</p>
+	{#if $State.text}
+		<article class="mt-4 border rounded-lg p-4 bg-[canvas]">
+			<p>{$State.text.slice(26)}</p>
 		</article>
 	{/if}
 
-	{#if state.winner}
-		<form action="/ai-image" on:submit={onSubmitImg} class="mt-4">
-			<input type="hidden" name="opponent1" value={state.opponent1} required />
-			<input type="hidden" name="opponent2" value={state.opponent2} required />
-			<input type="hidden" name="winner" value={state.winner} required />
+	{#if $State.winner}
+		<form on:submit|preventDefault={(e) => onSubmitImg(e)} class="mt-4">
+			<input type="hidden" name="opponent1" value={$State.opponent1} required />
+			<input type="hidden" name="opponent2" value={$State.opponent2} required />
+			<input type="hidden" name="winner" value={$State.winner} required />
 			<button type="submit"> Show me </button>
 		</form>
 	{/if}
 
-	<Dialog toggle={false} open={imgStore.showDialog} onClose$={() => (imgStore.showDialog = false)}>
-		{#if imgStore.isLoadong}
+	<Dialog toggle={false} open={$Img.showDialog} onClose={() => ($Img.showDialog = false)}>
+		{#if $Img.isLoading}
 			<iconify-icon class="svg" icon="pixelarticons:loader" />
 		{:else}
 			<img
-				src={imgStore.url}
-				alt={`An epic battle between ${state.opponent1} and ${state.opponent2}`}
+				src={$Img.url}
+				alt={`An epic battle between ${$State.opponent1} and ${$State.opponent2}`}
 			/>
 		{/if}
 	</Dialog>

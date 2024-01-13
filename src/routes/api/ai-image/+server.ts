@@ -1,6 +1,9 @@
+import  { Img } from '$lib'
 import { json } from '@sveltejs/kit'
 import { SECRET_OPEN_API_KEY } from '$env/static/private'
 import { PromptTemplate } from 'langchain/prompts'
+
+const img = getContext('img')
 
 const mods = [
   /** Style */
@@ -82,13 +85,13 @@ const promptTemplate = new PromptTemplate({
   inputVariables: ['opponent1', 'opponent2']
 })
 
-export async function GET(requestEvent) {
-  const opponent1 = requestEvent.query.get('opponent1')
-  const opponent2 = requestEvent.query.get('opponent2')
+export async function GET({ url }) {
+  const opponent1 = url.searchParams.get('opponent1')
+  const opponent2 = url.searchParams.get('opponent2')
 
   const prompt = await promptTemplate.format({
-    opponent1: opponent1,
-    opponent2: opponent2
+    opponent1,
+    opponent2
   })
 
   const body = {
@@ -104,7 +107,9 @@ export async function GET(requestEvent) {
     },
     body: JSON.stringify(body)
   })
+  
   const results = await response.json()
+  Img.url = results.data[0]
 
-	return json(results.data[0])
+	return json({ success: true })
 }

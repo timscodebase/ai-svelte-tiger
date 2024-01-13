@@ -9,3 +9,7 @@ export { Dialog }
 
 import TextBox from './components/TextBox'
 export { TextBox }
+
+import Img from './stores/img'
+import State from './stores/store'
+export { Img, State }
