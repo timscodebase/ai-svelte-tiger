@@ -8,10 +8,7 @@ const config = {
 	preprocess: vitePreprocess(),
 
 	kit: {
-		adapter: adapter(),
-		alias: {
-			$stores: './src/lib/stores',
-		}
+		adapter: adapter()
 	}
 };
 

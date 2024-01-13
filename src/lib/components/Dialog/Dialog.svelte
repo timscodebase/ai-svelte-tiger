@@ -1,5 +1,6 @@
 <script lang="ts">
-	export let id: string
+	import { randomString } from '$lib'
+	export let id = randomString(8)
 	export let toggle: string | false
 
 	let isOpen = false

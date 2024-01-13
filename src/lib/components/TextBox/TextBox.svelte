@@ -1,8 +1,8 @@
 <script lang="ts">
-	let label: string
-	let name: string
-	let value: string
-	let className: string
+	export let label: string
+	export let name: string
+	export let value: string
+	export let className: string
 </script>
 
 <div>
