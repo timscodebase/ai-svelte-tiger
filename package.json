@@ -20,6 +20,7 @@
 		"eslint": "^8.28.0",
 		"eslint-config-prettier": "^8.5.0",
 		"eslint-plugin-svelte3": "^4.0.0",
+		"iconify-icon": "^1.0.8",
 		"party-js": "^2.2.0",
 		"postcss": "^8.4.33",
 		"prettier": "^2.8.0",

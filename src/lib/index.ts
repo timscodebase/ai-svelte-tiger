@@ -9,7 +9,3 @@ export { Dialog }
 
 import TextBox from './components/TextBox'
 export { TextBox }
-
-import { SvgDefinitions } from './components/Svg'
-import { Svg } from './components/Svg'
-export { Svg, SvgDefinitions }

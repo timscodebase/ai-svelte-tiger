@@ -3,10 +3,6 @@ import { SECRET_OPEN_API_KEY } from '$env/static/private'
 import { z } from 'zod'
 import OpenAI from 'openai'
 import { PromptTemplate } from 'langchain/prompts'
-import party from 'party-js'
-import type { DynamicSourceType } from 'party-js/lib/systems/sources.js'
-import stateStore from '$lib/stateStore'
-import { jsFormSubmit } from '$lib'
 
 export const actions = {
   prompt: async ({ request }) => {
@@ -61,57 +57,5 @@ export const actions = {
       writer.write(encoder.encode(text))
     }
     writer.close();
-  },
-  get_winner: async ({ request }) => {
-		stateStore.isLoading = true
-		stateStore.text = ''
-    stateStore.winner = ''
-
-    const formData = await request.formData();
-
-    const response = await jsFormSubmit(formData)
-
-    if (!response.ok) {
-      stateStore.isLoading = false
-      alert("The request experienced an issue.")
-      return
-    }
-
-    if (!response.body) {
-      stateStore.isLoading = false
-      return
-    }
-
-    // Parse streaming body
-    const reader = response.body.getReader()
-    const decoder = new TextDecoder()
-    let isStillStreaming = true
-
-    while(isStillStreaming) {
-      const {value, done} = await reader.read()
-      const chunkValue = decoder.decode(value)
-      
-      stateStore.text += chunkValue
-
-      isStillStreaming = !done
-    }
-
-    const winnerPattern = /winner:\s+(\w+).*/gi
-    const match = winnerPattern.exec(stateStore.text)
-
-    stateStore.winner = match?.length ? match[1].toLowerCase() : ''
-
-    if (stateStore.winner) {
-      const winnerInput = document.querySelector(`textarea[name=${stateStore.winner}]`)
-      if (winnerInput) {
-        party.confetti(winnerInput as DynamicSourceType, {
-          count: 40,
-          size: 2,
-          spread: 15
-        })
-      }
-    }
-  
-    stateStore.isLoading = false
   }
 } satisfies Actions;
