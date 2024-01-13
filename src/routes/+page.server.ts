@@ -9,7 +9,7 @@ import stateStore from '$lib/stateStore'
 import { jsFormSubmit } from '$lib'
 
 export const actions = {
-  POST: async ({ request }) => {
+  prompt: async ({ request }) => {
     const formData = await request.formData();
 
     const validation = z.object({
@@ -62,14 +62,14 @@ export const actions = {
     }
     writer.close();
   },
-  get_winner: async (event) => {
+  get_winner: async ({ request }) => {
 		stateStore.isLoading = true
 		stateStore.text = ''
     stateStore.winner = ''
 
-    const form = event.target as HTMLFormElement
+    const formData = await request.formData();
 
-    const response = await jsFormSubmit(form)
+    const response = await jsFormSubmit(formData)
 
     if (!response.ok) {
       stateStore.isLoading = false

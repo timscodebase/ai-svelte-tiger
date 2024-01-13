@@ -49,7 +49,7 @@
 	<h1 class="text-4xl">AI of the Tiger 🐯</h1>
 	<p>A silly AI bot that can tell you who would win in a fight between...</p>
 
-	<form method="POST" class="grid gap-4 mt-8" action="?/get_winner" use:enhance>
+	<form method="POST" class="grid gap-4 mt-8" action="?/prompt" use:enhance>
 		<div class="grid gap-4 sm:grid-cols-2">
 			<TextBox
 				label="Opponent 1"
